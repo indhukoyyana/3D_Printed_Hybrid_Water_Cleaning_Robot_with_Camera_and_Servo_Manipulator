@@ -1,0 +1,146 @@
+#include <Servo.h>
+
+// Create servo objects
+Servo baseServo;
+Servo shoulderServo;
+Servo elbowServo;
+Servo wristServo;
+Servo gripperServo;
+
+// Servo pins
+#define BASE_PIN      3
+#define SHOULDER_PIN  5
+#define ELBOW_PIN     6
+#define WRIST_PIN     9
+#define GRIPPER_PIN   10
+
+// Initial positions
+int basePos = 90;
+int shoulderPos = 90;
+int elbowPos = 90;
+int wristPos = 90;
+int gripperPos = 90;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Attach servos
+  baseServo.attach(BASE_PIN);
+  shoulderServo.attach(SHOULDER_PIN);
+  elbowServo.attach(ELBOW_PIN);
+  wristServo.attach(WRIST_PIN);
+  gripperServo.attach(GRIPPER_PIN);
+
+  // Move to initial position
+  baseServo.write(basePos);
+  shoulderServo.write(shoulderPos);
+  elbowServo.write(elbowPos);
+  wristServo.write(wristPos);
+  gripperServo.write(gripperPos);
+
+  delay(1000);
+
+  Serial.println("Manipulator Ready");
+  Serial.println("Enter command:");
+  Serial.println("B = Base");
+  Serial.println("S = Shoulder");
+  Serial.println("E = Elbow");
+  Serial.println("W = Wrist");
+  Serial.println("G = Gripper");
+  Serial.println("A = Automatic Pick and Place");
+}
+
+void loop()
+{
+  if (Serial.available())
+  {
+    char command = Serial.read();
+
+    switch(command)
+    {
+      case 'B':
+        moveServo(baseServo, &basePos);
+        break;
+
+      case 'S':
+        moveServo(shoulderServo, &shoulderPos);
+        break;
+
+      case 'E':
+        moveServo(elbowServo, &elbowPos);
+        break;
+
+      case 'W':
+        moveServo(wristServo, &wristPos);
+        break;
+
+      case 'G':
+        moveServo(gripperServo, &gripperPos);
+        break;
+
+      case 'A':
+        automaticPickAndPlace();
+        break;
+    }
+  }
+}
+
+// Manual servo control
+void moveServo(Servo &servo, int *position)
+{
+  Serial.println("Enter angle (0-180): ");
+
+  while(!Serial.available());
+
+  int angle = Serial.parseInt();
+
+  if(angle >= 0 && angle <= 180)
+  {
+    *position = angle;
+    servo.write(angle);
+
+    Serial.print("Servo moved to: ");
+    Serial.println(angle);
+  }
+}
+
+// Automatic waste collection sequence
+void automaticPickAndPlace()
+{
+  Serial.println("Starting Pick and Place");
+
+  // Move arm towards waste
+  baseServo.write(90);
+  shoulderServo.write(120);
+  elbowServo.write(60);
+  wristServo.write(90);
+
+  delay(1000);
+
+  // Close gripper / scoop
+  gripperServo.write(30);
+  delay(1000);
+
+  // Lift waste
+  shoulderServo.write(80);
+  elbowServo.write(100);
+  delay(1000);
+
+  // Rotate towards collection area
+  baseServo.write(150);
+  delay(1000);
+
+  // Release waste
+  gripperServo.write(120);
+  delay(1000);
+
+  // Return to starting position
+  baseServo.write(90);
+  shoulderServo.write(90);
+  elbowServo.write(90);
+  wristServo.write(90);
+  gripperServo.write(90);
+
+  Serial.println("Pick and Place Completed");
+}
